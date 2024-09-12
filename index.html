@@ -1,0 +1,223 @@
+<!-- Code by Mackenzie Nisbet for hireup-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mac's Mini-Quiz App</title>
+    <style>
+        /* CSS styles that define the font, the container, and the other components of the quiz box */ 
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            background-color: #fff;
+        }
+        .question {
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+        .options {
+            list-style-type: none;
+            padding: 0;
+        }
+        .options li {
+            margin-bottom: 10px;
+        }
+        .score {
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .buttons button {
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background-color: #f0f0f0;
+            transition: background-color 0.3s;
+        }
+        .buttons button:hover {
+            background-color: #e0e0e0;
+        }
+        @media (max-width: 600px) {
+            .buttons {
+                flex-direction: column;
+            }
+            .buttons button {
+                margin-bottom: 10px;
+            }
+            .buttons button:last-child {
+                margin-bottom: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div class="question"></div>
+        <ul class="options"></ul>
+        <div class="buttons">
+            <button id="prevBtn">Previous</button>
+            <button id="nextBtn">Next</button>
+        </div>
+        <div class="score">Score: 0</div>
+    </div>
+
+    <!-- Array of questions to be loaded one at a time, made of the question, its choices, and the correct answer -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const questions = [
+                {
+                    question: "What is the capital of France?",
+                    options: ["Berlin", "Madrid", "Paris", "Rome"],
+                    correctAnswer: 2
+                },
+                {
+                    question: "What is the cube root of 64?",
+                    options: ["2", "4", "8", "16"],
+                    correctAnswer: 1
+                },
+                {
+                    question: "What is the largest planet?",
+                    options: ["Earth", "Mars", "Jupiter", "Saturn"],
+                    correctAnswer: 2
+                },
+                {
+                    question: "Which member of The Beatles played drums?",
+                    options: ["John", "Paul", "George", "Ringo"],
+                    correctAnswer: 3
+                },
+                {
+                    question: "What is this quiz's developers name?",
+                    options: ["Mac", "Max", "Matt", "Mason"],
+                    correctAnswer: 0
+                },
+            ];
+        
+            // Starts the application with 0 for score, and gets the document elements for display 
+            let currentQuestionIndex = 0;
+            let score = 0;
+            // Keep track of users answers so they can return, also to prevent multiple point scoring
+            const userAnswers = Array(questions.length).fill(null);
+
+            const questionElement = document.querySelector('.question');
+            const optionsElement = document.querySelector('.options');
+            const scoreElement = document.querySelector('.score');
+            const nextBtn = document.getElementById('nextBtn');
+            const prevBtn = document.getElementById('prevBtn');
+        
+            // Function to load questions by creating a new 'page' for each question by loading data from the questions array 
+            function loadQuestion(index) {
+                if (index >= questions.length) {
+                    displayFinalScore();
+                    return;
+                }
+
+                const question = questions[index];
+                questionElement.textContent = question.question;
+                optionsElement.innerHTML = '';
+        
+                question.options.forEach((option, i) => {
+                    const li = document.createElement('li');
+                    const input = document.createElement('input');
+                    input.type = 'radio';
+                    input.name = 'option';
+                    input.value = i;
+                    input.id = `option${i}`;
+                    const label = document.createElement('label');
+                    label.htmlFor = input.id;
+                    label.textContent = option;
+        
+                    li.appendChild(input);
+                    li.appendChild(label);
+                    optionsElement.appendChild(li);
+                });
+
+                // Restore the user's previous selection if any
+                if (userAnswers[index] !== null) {
+                    document.querySelector(`input[value="${userAnswers[index]}"]`).checked = true;
+                    disableOptions(); // Disable options if an answer was already selected
+                }
+                // Re-enable the next button when not on the last page 
+                nextBtn.disabled = false; 
+            }
+        
+            // Function to check answers by comparing the selected value to the question answer value 
+            function checkAnswer() {
+                const selectedOption = document.querySelector('input[name="option"]:checked');
+                if (selectedOption) {
+                    const selectedValue = parseInt(selectedOption.value);
+                    if (userAnswers[currentQuestionIndex] === null) { // Only update score if the question hasn't been answered yet
+                        userAnswers[currentQuestionIndex] = selectedValue;
+                        if (selectedValue === questions[currentQuestionIndex].correctAnswer) {
+                            score++;
+                        }
+                    }
+                }
+            }
+        
+            // Updates the score element
+            function updateScore() {
+                scoreElement.textContent = `Score: ${score}`;
+            }
+        
+            // Turns off options after selected
+            function disableOptions() {
+                const options = document.querySelectorAll('input[name="option"]');
+                options.forEach(option => {
+                    option.disabled = true;
+                });
+            }
+
+            // Function to display final score after quiz is over
+            function displayFinalScore() {
+                questionElement.textContent = "Quiz Completed!";
+                optionsElement.innerHTML = `Your final score is: ${score} out of ${questions.length}`;
+                nextBtn.disabled = true; // Disable the next button
+            }
+
+            // Listener event for the next button to load the next question
+            nextBtn.addEventListener('click', () => {
+                checkAnswer();
+                if (currentQuestionIndex < questions.length - 1) {
+                    currentQuestionIndex++;
+                    loadQuestion(currentQuestionIndex);
+                } else {
+                    displayFinalScore(); // Call this when it's the last question
+                }
+                updateScore();
+            });
+        
+            // Listener event for the previous button to load the previous question
+            prevBtn.addEventListener('click', () => {
+                if (currentQuestionIndex > 0) {
+                    currentQuestionIndex--;
+                    loadQuestion(currentQuestionIndex);
+                }
+            });
+        
+            loadQuestion(currentQuestionIndex);
+        });
+    </script>
+</body>
+</html>
